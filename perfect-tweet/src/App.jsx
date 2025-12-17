@@ -5,6 +5,14 @@ import { Download, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Language
 // ✅ 引用你的本地图片
 import verifiedIcon from './assets/verified.png';
 
+const DIMENSIONS = {
+    instagram: { label: '9:16 (Instagram)', class: 'aspect-[9/16] h-[750px]' },
+    square: { label: 'Square 1:1', class: 'aspect-square h-[600px]' }, // Original Square
+    '16:9': { label: '16:9 (公众号)', class: 'aspect-[16/9] h-[400px]' },
+    '3:4': { label: '3:4 (图文)', class: 'aspect-[3/4] h-[650px]' },
+    '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]' },
+};
+
 const TweetGenerator = () => {
     const [urlInput, setUrlInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +28,9 @@ const TweetGenerator = () => {
         dimension: 'instagram',
         date: '10:41 AM · Dec 16, 2025',
         showDate: true,
-        showTranslate: false
+        showTranslate: false,
+        contentScale: 100,
+        contentWidth: 85
     });
 
     const previewRef = useRef(null);
@@ -131,10 +141,13 @@ const TweetGenerator = () => {
                     ref={previewRef}
                     style={{ backgroundColor: config.bgColor }}
                     className={`relative mt-12 shadow-2xl transition-all duration-500 flex items-center justify-center
-             ${config.dimension === 'instagram' ? 'aspect-[9/16] h-[750px]' : 'aspect-square h-[600px]'}
+             ${DIMENSIONS[config.dimension]?.class || 'aspect-square h-[600px]'}
           `}
                 >
-                    <div className="w-[85%]">
+                    <div
+                        className="transition-all duration-300 origin-center"
+                        style={{ width: `${config.contentWidth}%`, transform: `scale(${config.contentScale / 100})` }}
+                    >
 
                         {/* Header: User Info */}
                         <div className="flex items-start mb-5">
@@ -187,9 +200,48 @@ const TweetGenerator = () => {
                     <div className="space-y-3">
                         <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Dimension</label>
                         <div className="grid grid-cols-2 gap-2">
-                            {['instagram', 'square'].map(d => (
-                                <button key={d} onClick={() => setConfig({ ...config, dimension: d })} className={`py-2 rounded-md border text-sm capitalize ${config.dimension === d ? 'border-sky-500 bg-sky-50 text-sky-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}>{d}</button>
+                            {Object.entries(DIMENSIONS).map(([key, { label }]) => (
+                                <button
+                                    key={key}
+                                    onClick={() => setConfig({ ...config, dimension: key })}
+                                    className={`py-2 rounded-md border text-sm ${config.dimension === key ? 'border-sky-500 bg-sky-50 text-sky-600 font-bold' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    {label}
+                                </button>
                             ))}
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sizes</label>
+                        <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Content scale</span>
+                                    <span>{config.contentScale}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="150"
+                                    value={config.contentScale}
+                                    onChange={(e) => setConfig({ ...config, contentScale: Number(e.target.value) })}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Content width</span>
+                                    <span>{config.contentWidth}%</span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min="50"
+                                    max="100"
+                                    value={config.contentWidth}
+                                    onChange={(e) => setConfig({ ...config, contentWidth: Number(e.target.value) })}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                />
+                            </div>
                         </div>
                     </div>
                     <div className="space-y-3">
