@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
-import { Download, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Languages } from 'lucide-react';
+import { Download, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Languages, MessageCircle, Repeat2, Heart } from 'lucide-react';
 
 // ✅ 引用你的本地图片
 import verifiedIcon from './assets/verified.png';
@@ -11,6 +11,23 @@ const DIMENSIONS = {
     '16:9': { label: '16:9 (公众号)', class: 'aspect-[16/9] h-[400px]' },
     '3:4': { label: '3:4 (图文)', class: 'aspect-[3/4] h-[650px]' },
     '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]' },
+};
+
+// X 风格数字格式化：1234 -> 1.2K, 1250000 -> 1.3M
+const formatCount = (n) => {
+    const num = Number(n) || 0;
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (num >= 1_000) return (num / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(num);
+};
+
+// 随机生成一组"高表现力"互动数据（对数均匀分布，比例参照真实爆款推文）
+const randomViralStats = () => {
+    const logRandom = (min, max) => Math.round(Math.exp(Math.log(min) + Math.random() * (Math.log(max) - Math.log(min))));
+    const likes = logRandom(20000, 1500000);
+    const retweets = Math.round(likes * (0.06 + Math.random() * 0.14));
+    const replies = Math.round(likes * (0.02 + Math.random() * 0.08));
+    return { likes, retweets, replies };
 };
 
 const TweetGenerator = () => {
@@ -29,6 +46,8 @@ const TweetGenerator = () => {
         date: '10:41 AM · Dec 16, 2025',
         showDate: true,
         showTranslate: false,
+        showStats: true,
+        stats: { replies: 128, retweets: 892, likes: 12400 },
         contentScale: 100,
         contentWidth: 85
     });
@@ -71,7 +90,12 @@ const TweetGenerator = () => {
                 handle: `@${tweet.author.screen_name}`,
                 content: tweet.text,
                 avatar: tweet.author.avatar_url,
-                date: safeFormatDate(tweet)
+                date: safeFormatDate(tweet),
+                stats: {
+                    replies: tweet.replies ?? 0,
+                    retweets: tweet.retweets ?? 0,
+                    likes: tweet.likes ?? 0
+                }
             }));
         } catch (error) {
             alert("抓取失败: " + error.message);
@@ -180,11 +204,29 @@ const TweetGenerator = () => {
                             {config.content}
                         </div>
 
-                        {/* Footer */}
+                        {/* Footer: 日期 / 翻译 */}
                         {(config.showDate || config.showTranslate) && (
                             <div style={{ color: config.secondaryColor }} className="pt-4 border-t border-white/10 flex gap-2 text-[15px] items-center">
                                 {config.showDate && <span>{config.date}</span>}
                                 {config.showTranslate && <span className="text-sky-500 font-medium ml-auto cursor-pointer">Translate tweet</span>}
+                            </div>
+                        )}
+
+                        {/* Footer: 互动数据（评 / 转 / 赞） */}
+                        {config.showStats && (
+                            <div style={{ color: config.secondaryColor }} className="mt-3 pt-4 border-t border-white/10 flex gap-7 text-[15px] items-center select-none">
+                                <span className="flex items-center gap-1.5">
+                                    <MessageCircle size={17} className="shrink-0" />
+                                    {formatCount(config.stats.replies)}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Repeat2 size={19} className="shrink-0" />
+                                    {formatCount(config.stats.retweets)}
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <Heart size={17} className="shrink-0" fill="currentColor" />
+                                    {formatCount(config.stats.likes)}
+                                </span>
                             </div>
                         )}
                     </div>
@@ -253,6 +295,40 @@ const TweetGenerator = () => {
                         <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setConfig({ ...config, showTranslate: !config.showTranslate })}>
                             <div className="flex items-center gap-2 text-gray-700 font-medium"><Languages size={16} /> Translate</div>
                             <div className={`w-10 h-6 flex items-center rounded-full p-1 duration-300 ${config.showTranslate ? 'bg-sky-500' : 'bg-gray-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${config.showTranslate ? 'translate-x-4' : ''}`}></div></div>
+                        </div>
+                        <div className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => setConfig({ ...config, showStats: !config.showStats })}>
+                            <div className="flex items-center gap-2 text-gray-700 font-medium"><Heart size={16} /> Show Stats</div>
+                            <div className={`w-10 h-6 flex items-center rounded-full p-1 duration-300 ${config.showStats ? 'bg-sky-500' : 'bg-gray-300'}`}><div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-300 ${config.showStats ? 'translate-x-4' : ''}`}></div></div>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Engagement</label>
+                            <button
+                                onClick={() => setConfig({ ...config, stats: randomViralStats() })}
+                                title="随机生成一组高表现力互动数据"
+                                className="text-xs font-bold bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-full px-3 py-1.5 hover:opacity-90 transition-opacity active:scale-95"
+                            >
+                                🎲 Random Viral
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[
+                                { key: 'replies', label: '💬 Replies' },
+                                { key: 'retweets', label: '🔁 Retweets' },
+                                { key: 'likes', label: '❤️ Likes' },
+                            ].map(({ key, label }) => (
+                                <div key={key}>
+                                    <div className="text-[11px] text-gray-500 font-medium mb-1 truncate">{label}</div>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={config.stats[key]}
+                                        onChange={(e) => setConfig({ ...config, stats: { ...config.stats, [key]: Math.max(0, Number(e.target.value) || 0) } })}
+                                        className="w-full p-2 text-sm border rounded-md focus:ring-2 focus:ring-sky-500 outline-none"
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
                     <div className="space-y-3">
