@@ -45,7 +45,7 @@
 **核心体验：设置一次模板，之后粘贴任意多条推文链接，一键批量导出高清 PNG。**
 
 ```bash
-# 安装到你的 Agent 的 skills 目录（以 Claude Code 为例；NewMax 用 ~/.newmax/skills/）
+# 安装到你的 Agent 的 skills 目录
 cp -R skill/ ~/.claude/skills/perfect-tweet/
 cd ~/.claude/skills/perfect-tweet && npm install
 
