@@ -40,7 +40,7 @@
 
 ## Agent Skill 版本（批量自动化）
 
-除了网页版，本项目还封装了一个 **Agent Skill**（[`skill/`](./skill/README.md)）：标准 SKILL.md 格式、与宿主无关，装入任何支持 Skills 的 Agent** 后，说「把这条推文做成卡片」即可全自动批量出图，无需打开网页。
+除了网页版，本项目还封装了一个 **Agent Skill**（[`skill/`](./skill/README.md)）：标准 SKILL.md 格式、与宿主无关，装入任何支持 Skills 的 Agent 后，说「把这条推文做成卡片」即可全自动批量出图，无需打开网页。
 
 **核心体验：设置一次模板，之后粘贴任意多条推文链接，一键批量导出高清 PNG。**
 
