@@ -11,14 +11,14 @@ import verifiedIcon from './assets/verified.png';
 
 /* ================= 常量 ================= */
 
-// 尺寸预设（新增 2:3 竖屏 · 抖音）；ratio = 宽/高，背景图模式的卡片浮层按此比例成形
+// 尺寸预设（新增 2:3 竖屏 · 抖音）
 const DIMENSIONS = {
-    instagram: { label: '9:16 Instagram', class: 'aspect-[9/16] h-[750px]', ratio: 9 / 16 },
-    square: { label: '1:1 Square', class: 'aspect-square h-[600px]', ratio: 1 },
-    '16:9': { label: '16:9 公众号', class: 'aspect-[16/9] h-[400px]', ratio: 16 / 9 },
-    '3:4': { label: '3:4 图文', class: 'aspect-[3/4] h-[650px]', ratio: 3 / 4 },
-    '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]', ratio: 4 / 3 },
-    '2:3': { label: '2:3 抖音', class: 'aspect-[2/3] h-[900px]', ratio: 2 / 3 },
+    instagram: { label: '9:16 Instagram', class: 'aspect-[9/16] h-[750px]' },
+    square: { label: '1:1 Square', class: 'aspect-square h-[600px]' },
+    '16:9': { label: '16:9 公众号', class: 'aspect-[16/9] h-[400px]' },
+    '3:4': { label: '3:4 图文', class: 'aspect-[3/4] h-[650px]' },
+    '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]' },
+    '2:3': { label: '2:3 抖音', class: 'aspect-[2/3] h-[900px]' },
 };
 
 // 主题预设（颜色取自 X 官方设计 tokens）
@@ -236,9 +236,9 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
             }
         >
             {hasBgImage ? (
-                /* ===== 背景图模式：卡片 = 按当前 dimension 比例成形的圆角浮层 =====
-                 * 宽度由 Card size 滑块控制（占画布宽 %），aspect-ratio 锁定形状；
-                 * 内容垂直居中，内容更多时可撑高浮层（保持必要大小不截断）；
+                /* ===== 背景图模式：卡片 = 紧凑自适应浮层 =====
+                 * 宽度 = 画布宽 × Card size%（画布宽度随 dimension 变，卡片随之变宽变窄）；
+                 * 高度完全由内容撑开 —— 只保留展示信息所必需的大小，四周全部露出背景图；
                  * marginLeft/Top 实现拖拽偏移（html2canvas 对盒定位导出一致） */
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     <div
@@ -249,7 +249,6 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                         className="relative overflow-hidden cursor-move select-none shadow-2xl touch-none"
                         style={{
                             width: `${style.contentWidth}%`,
-                            aspectRatio: `${dim.ratio}`,
                             borderRadius: '20px',
                             backgroundColor: cardColor,
                             opacity: style.cardOpacity / 100,
@@ -257,13 +256,8 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                             marginTop: `${style.cardOffsetY || 0}px`,
                         }}
                     >
-                        <div className="w-full flex flex-col justify-center overflow-hidden" style={{ padding: '5% 6%' }}>
-                            <div
-                                className="origin-center"
-                                style={{ width: '100%', transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT, textAlign: 'left' }}
-                            >
-                                {contentInner}
-                            </div>
+                        <div style={{ padding: '4% 5%', fontFamily: X_FONT, textAlign: 'left' }}>
+                            {contentInner}
                         </div>
                     </div>
                 </div>
@@ -615,18 +609,20 @@ const TweetGenerator = () => {
                     {/* ===== 缩放 ===== */}
                     <Section title="Sizes">
                         <div className="space-y-4">
-                            <div>
-                                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                                    <span>Content scale</span>
-                                    <span>{effStyle.contentScale}%</span>
+                            {!effStyle.bgImage && (
+                                <div>
+                                    <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                        <span>Content scale</span>
+                                        <span>{effStyle.contentScale}%</span>
+                                    </div>
+                                    <input
+                                        type="range" min="50" max="150"
+                                        value={effStyle.contentScale}
+                                        onChange={e => setStyle({ contentScale: Number(e.target.value) })}
+                                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                    />
                                 </div>
-                                <input
-                                    type="range" min="50" max="150"
-                                    value={effStyle.contentScale}
-                                    onChange={e => setStyle({ contentScale: Number(e.target.value) })}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
-                                />
-                            </div>
+                            )}
                             <div>
                                 <div className="flex justify-between text-sm text-gray-600 mb-1">
                                     <span>{effStyle.bgImage ? 'Card size（背景图模式）' : 'Content width'}</span>
