@@ -21,3 +21,6 @@ npm-debug.log*
 # Env
 .env
 .env.local
+
+# NewMax 会话目录（本地会话产物，不入库）
+推特卡片项目/

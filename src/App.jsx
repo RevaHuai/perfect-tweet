@@ -66,18 +66,18 @@ const randomViralStats = () => {
     return { likes, retweets, replies, views };
 };
 
+// X 中文界面时间格式：下午11:13 · 2026年9月2日
 const safeFormatDate = (tweet) => {
     try {
-        if (!tweet || !tweet.created_at) return "10:00 AM · Jan 1, 2025";
+        if (!tweet || !tweet.created_at) return "下午10:00 · 2025年1月1日";
         let dateObj = new Date(tweet.created_at);
         if (isNaN(dateObj.getTime())) dateObj = new Date(tweet.created_at * 1000);
         if (isNaN(dateObj.getTime())) dateObj = new Date();
-        return dateObj.toLocaleString('en-US', {
-            hour: 'numeric', minute: 'numeric', hour12: true,
-            month: 'short', day: 'numeric', year: 'numeric'
-        }).replace(',', ' ·');
+        const time = dateObj.toLocaleTimeString('zh-CN', { hour: 'numeric', minute: 'numeric', hour12: true });
+        const day = dateObj.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
+        return `${time} · ${day}`;
     } catch (e) {
-        return "10:00 AM · Jan 1, 2025";
+        return "下午10:00 · 2025年1月1日";
     }
 };
 
@@ -95,7 +95,7 @@ const DEFAULT_TWEET = () => ({
     handle: '@RevaHuai',
     content: `如Robert Sardello所言：在一个开放系统中，我们对超越我们的现实保持敏感，这种开放性扩展并深化了生命。我们能够面对不确定性，更重要的是，克服我们对改变的抵抗。\n\n不必惧怕改变，陷入对忒修斯之船的疑虑之中。\n\n自我可以无限的展开。`,
     avatar: 'https://pbs.twimg.com/profile_images/1929477404034301952/a7wApHDR_200x200.jpg',
-    date: '11:13 PM · Sep 2, 2026',
+    date: '下午11:13 · 2026年9月2日',
     stats: { replies: 6, retweets: 12, likes: 89, views: 320 },
 });
 
@@ -138,7 +138,7 @@ const TweetCard = ({ tweet, style }) => {
             >
                 <div
                     className="transition-all duration-300 origin-center"
-                    style={{ width: `${style.contentWidth}%`, transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT }}
+                    style={{ width: `${style.contentWidth}%`, transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT, textAlign: 'left' }}
                 >
                     {/* ===== Header：头像 + 名称 + 蓝标 + handle ===== */}
                     <div className="flex items-start">
@@ -149,7 +149,7 @@ const TweetCard = ({ tweet, style }) => {
                             alt=""
                         />
                         <div className="ml-3 min-w-0 flex-1">
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center">
                                 <span style={{ color: textColor }} className="font-bold text-[15px] leading-5 truncate">
                                     {tweet.name}
                                 </span>
@@ -157,7 +157,7 @@ const TweetCard = ({ tweet, style }) => {
                                     data-verified
                                     src={verifiedIcon}
                                     alt="verified"
-                                    className="w-[18px] h-[18px] shrink-0 object-contain block"
+                                    className="w-[18px] h-[18px] shrink-0 object-contain block ml-1"
                                 />
                             </div>
                             <div style={{ color: secondary }} className="text-[15px] leading-5 truncate">
@@ -179,41 +179,40 @@ const TweetCard = ({ tweet, style }) => {
                         </div>
                     )}
 
-                    {/* ===== 时间行 ===== */}
-                    {style.showDate && (
-                        <div style={{ color: secondary }} className="text-[15px] leading-5 mt-3">
-                            {tweet.date}
+                    {/* ===== 时间 + Views（X 中文界面一行式：下午11:13 · 2026年9月2日 · 318 查看） ===== */}
+                    {(style.showDate || style.showViews) && (
+                        <div style={{ color: secondary }} className="text-[15px] leading-6 mt-3">
+                            {style.showDate && <span>{tweet.date}</span>}
+                            {style.showDate && style.showViews && ' · '}
+                            {style.showViews && (
+                                <span>
+                                    <span style={{ color: textColor }} className="font-bold">{formatCount(tweet.stats.views)}</span> 查看
+                                </span>
+                            )}
                         </div>
                     )}
 
-                    {/* ===== Views 行 ===== */}
-                    {style.showViews && (
-                        <div style={{ color: secondary }} className="text-[15px] leading-5 mt-1">
-                            {formatCount(tweet.stats.views)} Views
-                        </div>
-                    )}
-
-                    {/* ===== 互动行（分割线下方） ===== */}
+                    {/* ===== 互动行（分割线下方；图标↔数字用 margin 而非 gap，保证 html2canvas 导出一致） ===== */}
                     {style.showStats && (
                         <div
                             className="mt-3 pt-2 flex items-center select-none"
                             style={{ borderTop: `1px solid ${border}`, color: secondary }}
                         >
-                            <span className="flex items-center gap-1 mr-20">
+                            <span className="flex items-center mr-20">
                                 <MessageCircle size={19} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none">{formatCount(tweet.stats.replies)}</span>
+                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.replies)}</span>
                             </span>
-                            <span className="flex items-center gap-1 mr-20">
+                            <span className="flex items-center mr-20">
                                 <Repeat2 size={22} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none">{formatCount(tweet.stats.retweets)}</span>
+                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.retweets)}</span>
                             </span>
-                            <span className="flex items-center gap-1 mr-20">
+                            <span className="flex items-center mr-20">
                                 <Heart size={19} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none">{formatCount(tweet.stats.likes)}</span>
+                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
                             </span>
-                            <span className="ml-auto flex items-center gap-5">
+                            <span className="ml-auto flex items-center">
                                 <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
-                                <Share size={19} strokeWidth={1.8} className="shrink-0" />
+                                <Share size={19} strokeWidth={1.8} className="shrink-0 ml-5" />
                             </span>
                         </div>
                     )}
@@ -439,7 +438,7 @@ const TweetGenerator = () => {
                                         </button>
                                     )}
 
-                                    <button onClick={() => setSelectedId(card.id)} className="block cursor-pointer">
+                                    <button onClick={() => setSelectedId(card.id)} className="block cursor-pointer text-left">
                                         <div ref={el => { cardRefs.current[card.id] = el; }}>
                                             <TweetCard tweet={card.tweet} style={s} />
                                         </div>
