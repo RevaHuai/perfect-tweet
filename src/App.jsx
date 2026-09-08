@@ -11,14 +11,14 @@ import verifiedIcon from './assets/verified.png';
 
 /* ================= 常量 ================= */
 
-// 尺寸预设（新增 2:3 竖屏 · 抖音）
+// 尺寸预设（新增 2:3 竖屏 · 抖音）；ratio = 宽/高，背景图模式的卡片浮层按此比例成形
 const DIMENSIONS = {
-    instagram: { label: '9:16 Instagram', class: 'aspect-[9/16] h-[750px]' },
-    square: { label: '1:1 Square', class: 'aspect-square h-[600px]' },
-    '16:9': { label: '16:9 公众号', class: 'aspect-[16/9] h-[400px]' },
-    '3:4': { label: '3:4 图文', class: 'aspect-[3/4] h-[650px]' },
-    '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]' },
-    '2:3': { label: '2:3 抖音', class: 'aspect-[2/3] h-[900px]' },
+    instagram: { label: '9:16 Instagram', class: 'aspect-[9/16] h-[750px]', ratio: 9 / 16 },
+    square: { label: '1:1 Square', class: 'aspect-square h-[600px]', ratio: 1 },
+    '16:9': { label: '16:9 公众号', class: 'aspect-[16/9] h-[400px]', ratio: 16 / 9 },
+    '3:4': { label: '3:4 图文', class: 'aspect-[3/4] h-[650px]', ratio: 3 / 4 },
+    '4:3': { label: '4:3', class: 'aspect-[4/3] h-[500px]', ratio: 4 / 3 },
+    '2:3': { label: '2:3 抖音', class: 'aspect-[2/3] h-[900px]', ratio: 2 / 3 },
 };
 
 // 主题预设（颜色取自 X 官方设计 tokens）
@@ -43,7 +43,9 @@ const DEFAULT_TEMPLATE = {
     showStats: true,
     showViews: true,
     bgImage: null,   // 用户上传的背景图 dataURL
-    cardOpacity: 100 // 卡片面板透明度 %
+    cardOpacity: 100, // 卡片面板透明度 %
+    cardOffsetX: 0,  // 背景图模式下卡片浮层的偏移（px，相对卡片中心；可拖拽）
+    cardOffsetY: 0
 };
 
 /* ================= 工具函数 ================= */
@@ -109,115 +111,179 @@ const DEFAULT_TWEET = () => ({
  * - 分割线 + 互动行：💬回复 🔁转推 ❤️点赞 均匀分布（间距约80px），🔖书签 ⤴分享 靠右
  * - 颜色 tokens：浅色 #0f1419/#536471/#eff3f4；深色 #e7e9ea/#71767b/#2f3336
  */
-const TweetCard = ({ tweet, style }) => {
+const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
     const theme = THEMES[style.theme] || THEMES.black;
     const cardColor = style.cardColor || theme.card;
     const textColor = style.textColor || theme.text;
     const secondary = theme.secondary;
     const border = theme.border;
     const hasBgImage = !!style.bgImage;
+    const dim = DIMENSIONS[style.dimension] || DIMENSIONS.instagram;
+    const dragRef = useRef(null);
+
+    /* ===== 背景图模式：浮层拖拽定位（pointer capture，clamp 在画布内） ===== */
+    const onPointerDown = (e) => {
+        e.preventDefault(); // 阻止文字选择 / 图片原生拖拽
+        onDragSelect?.();
+        const floatEl = e.currentTarget;
+        const canvasEl = floatEl.parentElement;
+        dragRef.current = {
+            sx: e.clientX, sy: e.clientY,
+            bx: style.cardOffsetX || 0, by: style.cardOffsetY || 0,
+            maxX: Math.max(0, (canvasEl.offsetWidth - floatEl.offsetWidth) / 2),
+            maxY: Math.max(0, (canvasEl.offsetHeight - floatEl.offsetHeight) / 2),
+        };
+        try { floatEl.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+    };
+    const onPointerMove = (e) => {
+        const d = dragRef.current;
+        if (!d) return;
+        const nx = Math.min(d.maxX, Math.max(-d.maxX, d.bx + (e.clientX - d.sx)));
+        const ny = Math.min(d.maxY, Math.max(-d.maxY, d.by + (e.clientY - d.sy)));
+        patchStyle?.({ cardOffsetX: Math.round(nx), cardOffsetY: Math.round(ny) });
+    };
+    const endDrag = () => { dragRef.current = null; };
+
+    /* ===== 卡片内容（两种模式共用） ===== */
+    const contentInner = (
+        <>
+            {/* ===== Header：头像 + 名称 + 蓝标 + handle ===== */}
+            <div className="flex items-start">
+                <img
+                    src={tweet.avatar}
+                    crossOrigin="anonymous"
+                    className="w-10 h-10 rounded-full object-cover block shrink-0"
+                    alt=""
+                />
+                <div className="ml-3 min-w-0 flex-1">
+                    <div className="flex items-center">
+                        <span style={{ color: textColor }} className="font-bold text-[15px] leading-5 truncate">
+                            {tweet.name}
+                        </span>
+                        <img
+                            data-verified
+                            src={verifiedIcon}
+                            alt="verified"
+                            className="w-[18px] h-[18px] shrink-0 object-contain block ml-1"
+                        />
+                    </div>
+                    <div style={{ color: secondary }} className="text-[15px] leading-5 truncate">
+                        {tweet.handle}
+                    </div>
+                </div>
+                <MoreHorizontal size={18} style={{ color: secondary }} className="shrink-0 mt-2" />
+            </div>
+
+            {/* ===== 正文（X 详情页 23px） ===== */}
+            <div style={{ color: textColor }} className="text-[23px] leading-[1.22] whitespace-pre-wrap mt-3 break-words">
+                {tweet.content}
+            </div>
+
+            {/* ===== Translate 链接（正文下方） ===== */}
+            {style.showTranslate && (
+                <div className="text-[15px] leading-5 mt-1.5 cursor-pointer" style={{ color: '#1d9bf0' }}>
+                    Translate post
+                </div>
+            )}
+
+            {/* ===== 时间 + Views（X 中文界面一行式：下午11:13 · 2026年9月2日 · 318 查看） ===== */}
+            {(style.showDate || style.showViews) && (
+                <div style={{ color: secondary }} className="text-[15px] leading-6 mt-3">
+                    {style.showDate && <span>{tweet.date}</span>}
+                    {style.showDate && style.showViews && ' · '}
+                    {style.showViews && (
+                        <span>
+                            <span style={{ color: textColor }} className="font-bold">{formatCount(tweet.stats.views)}</span> 查看
+                        </span>
+                    )}
+                </div>
+            )}
+
+            {/* ===== 互动行（分割线下方；图标↔数字用 margin 而非 gap，保证 html2canvas 导出一致） ===== */}
+            {style.showStats && (
+                <div
+                    className="mt-3 pt-2 flex items-center select-none"
+                    style={{ borderTop: `1px solid ${border}`, color: secondary }}
+                >
+                    <span className="flex items-center mr-20">
+                        <MessageCircle size={19} strokeWidth={1.8} className="shrink-0" />
+                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.replies)}</span>
+                    </span>
+                    <span className="flex items-center mr-20">
+                        <Repeat2 size={22} strokeWidth={1.8} className="shrink-0" />
+                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.retweets)}</span>
+                    </span>
+                    <span className="flex items-center mr-20">
+                        <Heart size={19} strokeWidth={1.8} className="shrink-0" />
+                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
+                    </span>
+                    <span className="ml-auto flex items-center">
+                        <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
+                        <Share size={19} strokeWidth={1.8} className="shrink-0 ml-5" />
+                    </span>
+                </div>
+            )}
+        </>
+    );
 
     return (
         <div
-            className={`relative shadow-2xl ${DIMENSIONS[style.dimension]?.class || DIMENSIONS.instagram.class}`}
+            className={`relative shadow-2xl ${dim.class}`}
             style={
                 hasBgImage
                     ? { backgroundImage: `url(${style.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }
                     : { backgroundColor: 'transparent' }
             }
         >
-            {/* 卡片面板层：有背景图时内缩成浮层（圆角），透明度在此层调节 */}
-            <div
-                className="absolute inset-0 overflow-hidden flex items-center justify-center"
-                style={{
-                    inset: hasBgImage ? '28px' : '0',
-                    borderRadius: hasBgImage ? '20px' : '0',
-                    backgroundColor: cardColor,
-                    opacity: style.cardOpacity / 100,
-                }}
-            >
-                <div
-                    className="transition-all duration-300 origin-center"
-                    style={{ width: `${style.contentWidth}%`, transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT, textAlign: 'left' }}
-                >
-                    {/* ===== Header：头像 + 名称 + 蓝标 + handle ===== */}
-                    <div className="flex items-start">
-                        <img
-                            src={tweet.avatar}
-                            crossOrigin="anonymous"
-                            className="w-10 h-10 rounded-full object-cover block shrink-0"
-                            alt=""
-                        />
-                        <div className="ml-3 min-w-0 flex-1">
-                            <div className="flex items-center">
-                                <span style={{ color: textColor }} className="font-bold text-[15px] leading-5 truncate">
-                                    {tweet.name}
-                                </span>
-                                <img
-                                    data-verified
-                                    src={verifiedIcon}
-                                    alt="verified"
-                                    className="w-[18px] h-[18px] shrink-0 object-contain block ml-1"
-                                />
-                            </div>
-                            <div style={{ color: secondary }} className="text-[15px] leading-5 truncate">
-                                {tweet.handle}
+            {hasBgImage ? (
+                /* ===== 背景图模式：卡片 = 按当前 dimension 比例成形的圆角浮层 =====
+                 * 宽度由 Card size 滑块控制（占画布宽 %），aspect-ratio 锁定形状；
+                 * 内容垂直居中，内容更多时可撑高浮层（保持必要大小不截断）；
+                 * marginLeft/Top 实现拖拽偏移（html2canvas 对盒定位导出一致） */
+                <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    <div
+                        onPointerDown={onPointerDown}
+                        onPointerMove={onPointerMove}
+                        onPointerUp={endDrag}
+                        onPointerCancel={endDrag}
+                        className="relative overflow-hidden cursor-move select-none shadow-2xl touch-none"
+                        style={{
+                            width: `${style.contentWidth}%`,
+                            aspectRatio: `${dim.ratio}`,
+                            borderRadius: '20px',
+                            backgroundColor: cardColor,
+                            opacity: style.cardOpacity / 100,
+                            marginLeft: `${style.cardOffsetX || 0}px`,
+                            marginTop: `${style.cardOffsetY || 0}px`,
+                        }}
+                    >
+                        <div className="w-full flex flex-col justify-center overflow-hidden" style={{ padding: '5% 6%' }}>
+                            <div
+                                className="origin-center"
+                                style={{ width: '100%', transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT, textAlign: 'left' }}
+                            >
+                                {contentInner}
                             </div>
                         </div>
-                        <MoreHorizontal size={18} style={{ color: secondary }} className="shrink-0 mt-2" />
                     </div>
-
-                    {/* ===== 正文（X 详情页 23px） ===== */}
-                    <div style={{ color: textColor }} className="text-[23px] leading-[1.22] whitespace-pre-wrap mt-3 break-words">
-                        {tweet.content}
-                    </div>
-
-                    {/* ===== Translate 链接（正文下方） ===== */}
-                    {style.showTranslate && (
-                        <div className="text-[15px] leading-5 mt-1.5 cursor-pointer" style={{ color: '#1d9bf0' }}>
-                            Translate post
-                        </div>
-                    )}
-
-                    {/* ===== 时间 + Views（X 中文界面一行式：下午11:13 · 2026年9月2日 · 318 查看） ===== */}
-                    {(style.showDate || style.showViews) && (
-                        <div style={{ color: secondary }} className="text-[15px] leading-6 mt-3">
-                            {style.showDate && <span>{tweet.date}</span>}
-                            {style.showDate && style.showViews && ' · '}
-                            {style.showViews && (
-                                <span>
-                                    <span style={{ color: textColor }} className="font-bold">{formatCount(tweet.stats.views)}</span> 查看
-                                </span>
-                            )}
-                        </div>
-                    )}
-
-                    {/* ===== 互动行（分割线下方；图标↔数字用 margin 而非 gap，保证 html2canvas 导出一致） ===== */}
-                    {style.showStats && (
-                        <div
-                            className="mt-3 pt-2 flex items-center select-none"
-                            style={{ borderTop: `1px solid ${border}`, color: secondary }}
-                        >
-                            <span className="flex items-center mr-20">
-                                <MessageCircle size={19} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.replies)}</span>
-                            </span>
-                            <span className="flex items-center mr-20">
-                                <Repeat2 size={22} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.retweets)}</span>
-                            </span>
-                            <span className="flex items-center mr-20">
-                                <Heart size={19} strokeWidth={1.8} className="shrink-0" />
-                                <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
-                            </span>
-                            <span className="ml-auto flex items-center">
-                                <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
-                                <Share size={19} strokeWidth={1.8} className="shrink-0 ml-5" />
-                            </span>
-                        </div>
-                    )}
                 </div>
-            </div>
+            ) : (
+                /* ===== 普通模式：面板铺满画布，透明度在此层调节 ===== */
+                <div
+                    className="absolute inset-0 overflow-hidden flex items-center justify-center"
+                    style={{
+                        backgroundColor: cardColor,
+                        opacity: style.cardOpacity / 100,
+                    }}
+                >
+                    <div
+                        className="transition-all duration-300 origin-center"
+                        style={{ width: `${style.contentWidth}%`, transform: `scale(${style.contentScale / 100})`, fontFamily: X_FONT, textAlign: 'left' }}
+                    >
+                        {contentInner}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
@@ -277,6 +343,17 @@ const TweetGenerator = () => {
     };
 
     const updateCard = (id, fn) => setCards(prev => prev.map(c => (c.id === id ? fn(c) : c)));
+
+    // 指定卡的样式编辑入口（拖拽/X-Y 微调用）：跟随模板 → 改模板，独立 → 改单卡覆盖
+    const patchCardStyle = (id, patch) => {
+        const card = cards.find(c => c.id === id);
+        if (!card) return;
+        if (card.followTemplate) {
+            setTemplate(t => ({ ...t, ...patch }));
+        } else {
+            updateCard(id, c => ({ ...c, style: { ...c.style, ...patch } }));
+        }
+    };
 
     // 切换「跟随模板 / 独立设置」：脱离时快照当前模板，回归时清空覆盖，保证视觉无缝
     const toggleFollow = () => {
@@ -440,7 +517,12 @@ const TweetGenerator = () => {
 
                                     <button onClick={() => setSelectedId(card.id)} className="block cursor-pointer text-left">
                                         <div ref={el => { cardRefs.current[card.id] = el; }}>
-                                            <TweetCard tweet={card.tweet} style={s} />
+                                            <TweetCard
+                                                tweet={card.tweet}
+                                                style={s}
+                                                patchStyle={(p) => patchCardStyle(card.id, p)}
+                                                onDragSelect={() => setSelectedId(card.id)}
+                                            />
                                         </div>
                                     </button>
                                 </div>
@@ -547,11 +629,11 @@ const TweetGenerator = () => {
                             </div>
                             <div>
                                 <div className="flex justify-between text-sm text-gray-600 mb-1">
-                                    <span>Content width</span>
+                                    <span>{effStyle.bgImage ? 'Card size（背景图模式）' : 'Content width'}</span>
                                     <span>{effStyle.contentWidth}%</span>
                                 </div>
                                 <input
-                                    type="range" min="50" max="100"
+                                    type="range" min={effStyle.bgImage ? 30 : 50} max="100"
                                     value={effStyle.contentWidth}
                                     onChange={e => setStyle({ contentWidth: Number(e.target.value) })}
                                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
@@ -641,6 +723,39 @@ const TweetGenerator = () => {
                                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
                             />
                         </div>
+                        {effStyle.bgImage && (
+                            <div className="space-y-2 pt-1 border-t border-gray-100">
+                                <div className="text-xs font-bold text-gray-400 uppercase tracking-wider">Position</div>
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-1">
+                                        <div className="text-[11px] text-gray-500 font-medium mb-1">X (px)</div>
+                                        <input
+                                            type="number" step="1"
+                                            value={effStyle.cardOffsetX}
+                                            onChange={e => setStyle({ cardOffsetX: Math.round(Number(e.target.value) || 0) })}
+                                            className="w-full p-2 text-sm border rounded-md focus:ring-2 focus:ring-sky-500 outline-none"
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="text-[11px] text-gray-500 font-medium mb-1">Y (px)</div>
+                                        <input
+                                            type="number" step="1"
+                                            value={effStyle.cardOffsetY}
+                                            onChange={e => setStyle({ cardOffsetY: Math.round(Number(e.target.value) || 0) })}
+                                            className="w-full p-2 text-sm border rounded-md focus:ring-2 focus:ring-sky-500 outline-none"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setStyle({ cardOffsetX: 0, cardOffsetY: 0 })}
+                                        title="回到画布中心"
+                                        className="px-3 py-2 rounded-md border border-gray-200 text-gray-600 text-xs font-bold hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors shrink-0"
+                                    >
+                                        Center
+                                    </button>
+                                </div>
+                                <div className="text-[11px] text-gray-400">提示：也可以直接在预览中拖动卡片调整位置</div>
+                            </div>
+                        )}
                     </Section>
 
                     {/* ===== 正文（选中卡） ===== */}
