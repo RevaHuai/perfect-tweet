@@ -25,26 +25,30 @@
 
 ## 安装
 
-### 方式一：NewMax 用户（推荐）
+本 Skill 采用标准 `SKILL.md` 格式，与宿主无关——**任何支持 Skills 的 Agent 都能装载**，配置跟随安装位置自包含，装到哪都能用。
+
+### 方式一：装入任意 Agent（Claude Code / NewMax / Cursor 等）
+
+把本目录复制到你的 Agent 的 skills 目录，然后安装依赖：
 
 ```bash
-# 复制到 NewMax skill 目录
+# Claude Code
+cp -R skill/ ~/.claude/skills/perfect-tweet/
+
+# NewMax
 cp -R skill/ ~/.newmax/skills/perfect-tweet/
 
+# 其他 Agent：查阅其文档中的 skills / 插件目录，复制到同样位置即可
+
 # 安装依赖（Puppeteer 自动下载 Chromium，约 1~2 分钟）
-cd ~/.newmax/skills/perfect-tweet && npm install
+cd <你的 skills 目录>/perfect-tweet && npm install
 ```
 
-之后在 NewMax 里对 Agent 说「帮我把这条推文做成卡片」即可，Agent 会自动加载本 Skill。
+之后对 Agent 说「帮我把这条推文做成卡片」，Agent 会自动加载本 Skill。
 
-### 方式二：通用 Agent / Claude Code 用户
+> 多个 Agent 想共享同一份模板配置？设置环境变量 `PERFECT_TWEET_CONFIG=/path/to/config.json`，所有安装实例都会读写这一份。
 
-```bash
-cp -R skill/ ~/.claude/skills/perfect-tweet/
-cd ~/.claude/skills/perfect-tweet && npm install
-```
-
-### 方式三：纯命令行使用
+### 方式二：纯命令行使用（不依赖任何 Agent）
 
 ```bash
 git clone https://github.com/RevaHuai/perfect-tweet.git

@@ -7,13 +7,19 @@ description: X/Twitter 推文卡片批量生成器。当用户想把推文做成
 
 把任意 X（Twitter）推文渲染成 X 官方详情页风格的高清分享卡片。视觉一比一复刻 X 网页版（Chirp 字体回退链、官方色彩 tokens、lucide 图标、蓝色认证标）。**设置一次模板，之后所有生成全自动。**
 
+本 Skill 与宿主无关（标准 SKILL.md 格式），可装入任何 Agent 的 skills 目录。
+
 ## 依赖与安装
 
 - Node.js ≥ 18
+- 把本目录复制到你的 Agent 的 skills 目录（装到哪，配置就跟到哪，自包含）：
+  - Claude Code：`~/.claude/skills/perfect-tweet/`
+  - NewMax：`~/.newmax/skills/perfect-tweet/`
+  - 其他 Agent：对应宿主文档中的 skills/插件目录
 - 首次使用前在 Skill 目录安装依赖（Puppeteer 会自动下载 Chromium，约 1~2 分钟）：
 
 ```bash
-cd ~/.newmax/skills/perfect-tweet && npm install
+cd <你的 skills 目录>/perfect-tweet && npm install
 ```
 
 ## 命令
@@ -32,7 +38,7 @@ perfect-tweet config bgImage=~/Pictures/bg.jpg cardOpacity=85 cardOffsetX=0
 perfect-tweet config --reset        # 恢复默认
 ```
 
-配置存在 `~/.newmax/skills/perfect-tweet/config.json`，重启不丢失。
+配置存在 Skill 自身目录的 `config.json`（跟随安装位置，重启不丢失；设置环境变量 `PERFECT_TWEET_CONFIG` 可让多个 Agent 共享同一份配置）。
 
 ### 2. `preview` — 预览当前模板效果
 
@@ -89,7 +95,7 @@ perfect-tweet generate <链接> --dim 2:3 --out ~/Desktop    # 临时换尺寸/�
 ```
 bin/perfect-tweet.js   # CLI 入口（config / generate / preview）
 lib/render.js          # HTML 生成器（一比一复刻 X 详情页排版）
-lib/config.js          # 模板读写 + 校验（~/.newmax/skills/perfect-tweet/config.json）
+lib/config.js          # 模板读写 + 校验（config.json 存于 skill 自身目录，位置无关）
 lib/fetch.js           # fxtwitter 抓取（+可选官方 API）
 lib/screenshot.js      # Puppeteer headless 高清截图
 assets/verified.png    # X 蓝色认证标

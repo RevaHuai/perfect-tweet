@@ -24,3 +24,6 @@ npm-debug.log*
 
 # NewMax 会话目录（本地会话产物，不入库）
 推特卡片项目/
+
+# perfect-tweet skill 运行时生成的本地配置（不入库）
+skill/config.json

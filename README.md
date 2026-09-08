@@ -40,14 +40,14 @@
 
 ## Agent Skill 版本（批量自动化）
 
-除了网页版，本项目还封装了一个 **Agent Skill**（[`skill/`](./skill/README.md)）：装载后对 AI 助手（NewMax / Claude Code 等）说「把这条推文做成卡片」，即可全自动批量出图，无需打开网页。
+除了网页版，本项目还封装了一个 **Agent Skill**（[`skill/`](./skill/README.md)）：标准 SKILL.md 格式、与宿主无关，装入 **Claude Code、NewMax、Cursor 等任何支持 Skills 的 Agent** 后，说「把这条推文做成卡片」即可全自动批量出图，无需打开网页。
 
 **核心体验：设置一次模板，之后粘贴任意多条推文链接，一键批量导出高清 PNG。**
 
 ```bash
-# 安装（复制到 skill 目录并装依赖）
-cp -R skill/ ~/.newmax/skills/perfect-tweet/
-cd ~/.newmax/skills/perfect-tweet && npm install
+# 安装到你的 Agent 的 skills 目录（以 Claude Code 为例；NewMax 用 ~/.newmax/skills/）
+cp -R skill/ ~/.claude/skills/perfect-tweet/
+cd ~/.claude/skills/perfect-tweet && npm install
 
 # 设置一次模板（持久保存）
 perfect-tweet config theme=white dimension=16:9

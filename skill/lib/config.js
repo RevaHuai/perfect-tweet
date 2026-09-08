@@ -1,15 +1,23 @@
 /**
  * perfect-tweet 模板配置模块
- * 配置持久化到 ~/.newmax/skills/perfect-tweet/config.json
+ * 配置持久化到 Skill 自身目录的 config.json —— 无论装到哪个 Agent 的
+ * skills 目录（Claude Code / NewMax / Cursor / 任意位置）都自包含；
+ * 需要多个 Agent 共享一份配置时，可用环境变量 PERFECT_TWEET_CONFIG 指定。
  */
 
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { DEFAULT_TEMPLATE, TEMPLATE_FIELDS, DIMENSIONS, THEMES } from './render.js';
 
-export const CONFIG_DIR = path.join(os.homedir(), '.newmax', 'skills', 'perfect-tweet');
-export const CONFIG_PATH = path.join(CONFIG_DIR, 'config.json');
+/** Skill 安装根目录（本文件位于 lib/ 下，上一级即 skill 根） */
+export const SKILL_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** 配置文件路径：默认在 skill 根目录；PERFECT_TWEET_CONFIG 可覆盖（绝对或相对路径均可） */
+export const CONFIG_PATH = process.env.PERFECT_TWEET_CONFIG
+    ? path.resolve(process.env.PERFECT_TWEET_CONFIG)
+    : path.join(SKILL_ROOT, 'config.json');
+export const CONFIG_DIR = path.dirname(CONFIG_PATH);
 
 /** 读取模板配置（不存在时返回默认模板，不落盘） */
 export function loadConfig() {
