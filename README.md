@@ -38,7 +38,29 @@
 
 ---
 
-## 快速开始
+## Agent Skill 版本（批量自动化）
+
+除了网页版，本项目还封装了一个 **Agent Skill**（[`skill/`](./skill/README.md)）：标准 SKILL.md 格式、与宿主无关，装入任何支持 Skills 的 Agent 后，说「把这条推文做成卡片」即可全自动批量出图，无需打开网页。
+
+**核心体验：设置一次模板，之后粘贴任意多条推文链接，一键批量导出高清 PNG。**
+
+```bash
+# 安装到你的 Agent 的 skills 目录
+cp -R skill/ ~/.claude/skills/perfect-tweet/
+cd ~/.claude/skills/perfect-tweet && npm install
+
+# 设置一次模板（持久保存）
+perfect-tweet config theme=white dimension=16:9
+
+# 之后随时批量生成
+perfect-tweet generate <推文链接1> <推文链接2> ...
+```
+
+与网页版渲染效果一比一一致（Puppeteer headless 截图，默认 3 倍高清），支持全部模板能力：双主题、6 种尺寸、背景图浮层、互动数据修饰（`--viral` / `--set`）。完整文档见 [`skill/README.md`](./skill/README.md)。
+
+---
+
+## 快速开始（网页版开发）
 
 ### 安装依赖
 
@@ -94,12 +116,13 @@ npm run preview
 
 | 技术 | 用途 |
 |------|------|
-| React 18 | UI 框架 |
-| Vite | 构建工具 |
-| Tailwind CSS | 样式框架 |
-| html2canvas | 卡片渲染导出 |
-| lucide-react | 图标库 |
+| React 18 | UI 框架（网页版） |
+| Vite | 构建工具（网页版） |
+| Tailwind CSS | 样式框架（网页版） |
+| html2canvas | 卡片渲染导出（网页版） |
+| lucide-react | 图标库（网页版） |
 | FXTwitter API | 推文数据抓取 |
+| Node.js + Puppeteer | Agent Skill 版本：headless 高清截图与批量渲染 |
 
 ---
 
@@ -107,11 +130,15 @@ npm run preview
 
 ```
 perfect-tweet/
-├── src/
+├── src/                 # 网页版 React 源码
 │   ├── App.jsx          # 主应用逻辑
 │   ├── main.jsx         # 入口文件
 │   ├── index.css        # 全局样式
 │   └── assets/          # 静态资源（verified 图标等）
+├── skill/               # Agent Skill 版本（批量自动化，见 skill/README.md）
+│   ├── bin/             # CLI 入口（config / generate / preview）
+│   ├── lib/             # 渲染 / 抓取 / 配置 / 截图四模块
+│   └── SKILL.md         # Agent 加载入口
 ├── index.html           # HTML 模板
 ├── vite.config.js       # Vite 配置
 ├── tailwind.config.js   # Tailwind 配置
