@@ -272,13 +272,12 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                     </div>
                 </div>
             ) : (
-                /* ===== 普通模式：面板铺满画布，内容顶部对齐（X 详情页行为），透明度在此层调节 ===== */
+                /* ===== 普通模式：面板铺满画布，内容垂直居中，透明度在此层调节 ===== */
                 <div
-                    className="absolute inset-0 overflow-hidden flex justify-center items-start"
+                    className="absolute inset-0 overflow-hidden flex items-center justify-center"
                     style={{
                         backgroundColor: cardColor,
                         opacity: style.cardOpacity / 100,
-                        paddingTop: '12px',
                     }}
                 >
                     <div
