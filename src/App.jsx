@@ -218,10 +218,12 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                         <Heart size={19} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
                     </span>
-                    <span className="ml-auto flex items-center">
+                    <span className="flex items-center mr-20">
                         <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.bookmarks)}</span>
-                        <Share size={19} strokeWidth={1.8} className="shrink-0 ml-5" />
+                    </span>
+                    <span className="ml-auto flex items-center">
+                        <Share size={19} strokeWidth={1.8} className="shrink-0" />
                     </span>
                 </div>
             )}
