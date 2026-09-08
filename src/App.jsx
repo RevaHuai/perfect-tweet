@@ -37,6 +37,7 @@ const DEFAULT_TEMPLATE = {
     textColor: '#e7e9ea',
     dimension: 'instagram',
     contentScale: 100,
+    fontScale: 100,   // 字体大小系数（卡片内文字/头像/图标/间距统一缩放）
     contentWidth: 85,
     showDate: true,
     showTranslate: false,
@@ -145,6 +146,9 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
     };
     const endDrag = () => { dragRef.current = null; };
 
+    /* ===== 字号系数：卡片内文字/头像/图标/间距统一按比例缩放 ===== */
+    const k = (style.fontScale || 100) / 100;
+
     /* ===== 卡片内容（两种模式共用） ===== */
     const contentInner = (
         <>
@@ -153,43 +157,45 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 <img
                     src={tweet.avatar}
                     crossOrigin="anonymous"
-                    className="w-10 h-10 rounded-full object-cover block shrink-0"
+                    className="rounded-full object-cover block shrink-0"
+                    style={{ width: 40 * k, height: 40 * k }}
                     alt=""
                 />
-                <div className="ml-3 min-w-0 flex-1">
+                <div className="min-w-0 flex-1" style={{ marginLeft: 12 * k }}>
                     <div className="flex items-center">
-                        <span style={{ color: textColor }} className="font-bold text-[15px] leading-5 truncate">
+                        <span style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="font-bold truncate">
                             {tweet.name}
                         </span>
                         <img
                             data-verified
                             src={verifiedIcon}
                             alt="verified"
-                            className="w-[18px] h-[18px] shrink-0 object-contain block ml-1"
+                            className="shrink-0 object-contain block"
+                            style={{ width: 18 * k, height: 18 * k, marginLeft: 4 * k }}
                         />
                     </div>
-                    <div style={{ color: secondary }} className="text-[15px] leading-5 truncate">
+                    <div style={{ color: secondary, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="truncate">
                         {tweet.handle}
                     </div>
                 </div>
-                <MoreHorizontal size={18} style={{ color: secondary }} className="shrink-0 mt-2" />
+                <MoreHorizontal size={18 * k} style={{ color: secondary, marginTop: 8 * k }} className="shrink-0" />
             </div>
 
-            {/* ===== 正文（X 详情页 23px） ===== */}
-            <div style={{ color: textColor }} className="text-[23px] leading-[1.22] whitespace-pre-wrap mt-3 break-words">
+            {/* ===== 正文（X 详情页 23px 基准 × 字号系数） ===== */}
+            <div style={{ color: textColor, fontSize: 23 * k, marginTop: 12 * k }} className="leading-[1.22] whitespace-pre-wrap break-words">
                 {tweet.content}
             </div>
 
             {/* ===== Translate 链接（正文下方） ===== */}
             {style.showTranslate && (
-                <div className="text-[15px] leading-5 mt-1.5 cursor-pointer" style={{ color: '#1d9bf0' }}>
+                <div className="cursor-pointer" style={{ color: '#1d9bf0', fontSize: 15 * k, marginTop: 6 * k }}>
                     Translate post
                 </div>
             )}
 
             {/* ===== 时间 + Views（X 中文界面一行式：下午11:13 · 2026年9月2日 · 318 查看） ===== */}
             {(style.showDate || style.showViews) && (
-                <div style={{ color: secondary }} className="text-[15px] leading-6 mt-3">
+                <div style={{ color: secondary, fontSize: 15 * k, lineHeight: `${24 * k}px`, marginTop: 12 * k }}>
                     {style.showDate && <span>{tweet.date}</span>}
                     {style.showDate && style.showViews && ' · '}
                     {style.showViews && (
@@ -200,30 +206,30 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 </div>
             )}
 
-            {/* ===== 互动行（分割线下方；图标↔数字用 margin 而非 gap，保证 html2canvas 导出一致） ===== */}
+            {/* ===== 互动行（分割线下方；justify-between 自适应分布，图标↔数字用 margin 保证导出一致） ===== */}
             {style.showStats && (
                 <div
-                    className="mt-3 pt-2 flex items-center justify-between select-none"
-                    style={{ borderTop: `1px solid ${border}`, color: secondary }}
+                    className="flex items-center justify-between select-none"
+                    style={{ borderTop: `1px solid ${border}`, color: secondary, marginTop: 12 * k, paddingTop: 8 * k }}
                 >
                     <span className="flex items-center">
-                        <MessageCircle size={19} strokeWidth={1.8} className="shrink-0" />
-                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.replies)}</span>
+                        <MessageCircle size={19 * k} strokeWidth={1.8} className="shrink-0" />
+                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.replies)}</span>
                     </span>
                     <span className="flex items-center">
-                        <Repeat2 size={22} strokeWidth={1.8} className="shrink-0" />
-                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.retweets)}</span>
+                        <Repeat2 size={22 * k} strokeWidth={1.8} className="shrink-0" />
+                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.retweets)}</span>
                     </span>
                     <span className="flex items-center">
-                        <Heart size={19} strokeWidth={1.8} className="shrink-0" />
-                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
+                        <Heart size={19 * k} strokeWidth={1.8} className="shrink-0" />
+                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.likes)}</span>
                     </span>
                     <span className="flex items-center">
-                        <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
-                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.bookmarks)}</span>
+                        <Bookmark size={19 * k} strokeWidth={1.8} className="shrink-0" />
+                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.bookmarks)}</span>
                     </span>
                     <span className="flex items-center">
-                        <Share size={19} strokeWidth={1.8} className="shrink-0" />
+                        <Share size={19 * k} strokeWidth={1.8} className="shrink-0" />
                     </span>
                 </div>
             )}
@@ -615,6 +621,18 @@ const TweetGenerator = () => {
                     {/* ===== 缩放 ===== */}
                     <Section title="Sizes">
                         <div className="space-y-4">
+                            <div>
+                                <div className="flex justify-between text-sm text-gray-600 mb-1">
+                                    <span>Font size</span>
+                                    <span>{effStyle.fontScale}%</span>
+                                </div>
+                                <input
+                                    type="range" min="60" max="160"
+                                    value={effStyle.fontScale}
+                                    onChange={e => setStyle({ fontScale: Number(e.target.value) })}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-sky-500"
+                                />
+                            </div>
                             {!effStyle.bgImage && (
                                 <div>
                                     <div className="flex justify-between text-sm text-gray-600 mb-1">
