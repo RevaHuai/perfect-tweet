@@ -64,8 +64,9 @@ const randomViralStats = () => {
     const likes = logRandom(20000, 1500000);
     const retweets = Math.round(likes * (0.06 + Math.random() * 0.14));
     const replies = Math.round(likes * (0.02 + Math.random() * 0.08));
+    const bookmarks = Math.round(likes * (0.04 + Math.random() * 0.10)); // 收藏通常是赞的 4%~14%
     const views = Math.round(likes * (3 + Math.random() * 17)); // 浏览量通常是赞的几倍到十几倍
-    return { likes, retweets, replies, views };
+    return { likes, retweets, replies, bookmarks, views };
 };
 
 // X 中文界面时间格式：下午11:13 · 2026年9月2日
@@ -98,7 +99,7 @@ const DEFAULT_TWEET = () => ({
     content: `如Robert Sardello所言：在一个开放系统中，我们对超越我们的现实保持敏感，这种开放性扩展并深化了生命。我们能够面对不确定性，更重要的是，克服我们对改变的抵抗。\n\n不必惧怕改变，陷入对忒修斯之船的疑虑之中。\n\n自我可以无限的展开。`,
     avatar: 'https://pbs.twimg.com/profile_images/1929477404034301952/a7wApHDR_200x200.jpg',
     date: '下午11:13 · 2026年9月2日',
-    stats: { replies: 6, retweets: 12, likes: 89, views: 320 },
+    stats: { replies: 6, retweets: 12, likes: 89, bookmarks: 23, views: 320 },
 });
 
 /* ================= 卡片渲染（一比一复刻 X 详情页排版） ================= */
@@ -219,6 +220,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                     </span>
                     <span className="ml-auto flex items-center">
                         <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
+                        <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.bookmarks)}</span>
                         <Share size={19} strokeWidth={1.8} className="shrink-0 ml-5" />
                     </span>
                 </div>
@@ -386,6 +388,7 @@ const TweetGenerator = () => {
                         replies: t.replies ?? 0,
                         retweets: t.retweets ?? 0,
                         likes: t.likes ?? 0,
+                        bookmarks: t.bookmarks ?? 0,
                         views: t.views ?? 0,
                     },
                 }));
@@ -666,6 +669,7 @@ const TweetGenerator = () => {
                                 { key: 'replies', label: '💬 Replies' },
                                 { key: 'retweets', label: '🔁 Retweets' },
                                 { key: 'likes', label: '❤️ Likes' },
+                                { key: 'bookmarks', label: '🔖 Bookmarks' },
                                 { key: 'views', label: '👁 Views' },
                             ].map(({ key, label }) => (
                                 <div key={key}>
