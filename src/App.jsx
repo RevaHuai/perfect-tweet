@@ -203,26 +203,26 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
             {/* ===== 互动行（分割线下方；图标↔数字用 margin 而非 gap，保证 html2canvas 导出一致） ===== */}
             {style.showStats && (
                 <div
-                    className="mt-3 pt-2 flex items-center select-none"
+                    className="mt-3 pt-2 flex items-center justify-between select-none"
                     style={{ borderTop: `1px solid ${border}`, color: secondary }}
                 >
-                    <span className="flex items-center mr-20">
+                    <span className="flex items-center">
                         <MessageCircle size={19} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.replies)}</span>
                     </span>
-                    <span className="flex items-center mr-20">
+                    <span className="flex items-center">
                         <Repeat2 size={22} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.retweets)}</span>
                     </span>
-                    <span className="flex items-center mr-20">
+                    <span className="flex items-center">
                         <Heart size={19} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.likes)}</span>
                     </span>
-                    <span className="flex items-center mr-20">
+                    <span className="flex items-center">
                         <Bookmark size={19} strokeWidth={1.8} className="shrink-0" />
                         <span className="text-[15px] leading-none ml-1">{formatCount(tweet.stats.bookmarks)}</span>
                     </span>
-                    <span className="ml-auto flex items-center">
+                    <span className="flex items-center">
                         <Share size={19} strokeWidth={1.8} className="shrink-0" />
                     </span>
                 </div>
@@ -266,12 +266,13 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                     </div>
                 </div>
             ) : (
-                /* ===== 普通模式：面板铺满画布，透明度在此层调节 ===== */
+                /* ===== 普通模式：面板铺满画布，内容顶部对齐（X 详情页行为），透明度在此层调节 ===== */
                 <div
-                    className="absolute inset-0 overflow-hidden flex items-center justify-center"
+                    className="absolute inset-0 overflow-hidden flex justify-center items-start"
                     style={{
                         backgroundColor: cardColor,
                         opacity: style.cardOpacity / 100,
+                        paddingTop: '12px',
                     }}
                 >
                     <div
