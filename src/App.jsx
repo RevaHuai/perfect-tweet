@@ -163,7 +163,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 />
                 <div className="min-w-0 flex-1" style={{ marginLeft: 12 * k }}>
                     <div className="flex items-center">
-                        <span style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="font-bold truncate">
+                        <span className="font-bold truncate min-w-0" style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }}>
                             {tweet.name}
                         </span>
                         <img
@@ -214,19 +214,19 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 >
                     <span className="flex items-center">
                         <MessageCircle size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.replies)}</span>
+                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.replies)}</span>
                     </span>
                     <span className="flex items-center">
-                        <Repeat2 size={22 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.retweets)}</span>
+                        <Repeat2 size={19 * k} strokeWidth={1.8} className="shrink-0" />
+                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.retweets)}</span>
                     </span>
                     <span className="flex items-center">
                         <Heart size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.likes)}</span>
+                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.likes)}</span>
                     </span>
                     <span className="flex items-center">
                         <Bookmark size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span className="leading-none" style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.bookmarks)}</span>
+                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.bookmarks)}</span>
                     </span>
                     <span className="flex items-center">
                         <Share size={19 * k} strokeWidth={1.8} className="shrink-0" />
