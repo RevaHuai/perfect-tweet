@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import html2canvas from 'html2canvas';
 import {
-    Download, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Languages,
+    Download, Upload, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Languages,
     MessageCircle, Repeat2, Heart, Bookmark, Share, Trash2, Layers,
     Image as ImageIcon, XCircle, Files
 } from 'lucide-react';
@@ -46,7 +46,9 @@ const DEFAULT_TEMPLATE = {
     bgImage: null,   // 用户上传的背景图 dataURL
     cardOpacity: 100, // 卡片面板透明度 %
     cardOffsetX: 0,  // 背景图模式下卡片浮层的偏移（px，相对卡片中心；可拖拽）
-    cardOffsetY: 0
+    cardOffsetY: 0,
+    scale: 3,        // 导出倍率（与 skill 的 scale 字段对齐）
+    timeZone: 'Asia/Shanghai'  // 时区（与 skill 的 timeZone 字段对齐）
 };
 
 /* ================= 工具函数 ================= */
@@ -327,6 +329,56 @@ const TweetGenerator = () => {
 
     const cardRefs = useRef({});     // 每张卡截图容器的 DOM
     const bgFileRef = useRef(null);  // 背景图 file input
+    const templateFileRef = useRef(null); // 模板导入 file input
+
+    /* ===== 模板导出 / 导入（与 perfect-tweet skill 的 template 命令对齐） ===== */
+    const exportTemplate = () => {
+        const tpl = { ...template };
+        // 导出字段（与 skill 的 template export 一致）
+        const exportKeys = [
+            'theme','cardColor','textColor','dimension','fontScale','contentScale','contentWidth',
+            'showDate','showViews','showTranslate','showStats','bgImage','cardOpacity',
+            'cardOffsetX','cardOffsetY','scale','timeZone'
+        ];
+        const out = {};
+        for (const k of exportKeys) { if (k in tpl) out[k] = tpl[k]; }
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `perfect-tweet-template-${Date.now()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const importTemplate = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const raw = JSON.parse(reader.result);
+                if (typeof raw !== 'object' || Array.isArray(raw)) {
+                    alert('模板 JSON 格式错误：应为对象');
+                    return;
+                }
+                // 只保留合法字段（与 skill validatePatch 对齐）
+                const allowed = [
+                    'theme','cardColor','textColor','dimension','fontScale','contentScale','contentWidth',
+                    'showDate','showViews','showTranslate','showStats','bgImage','cardOpacity',
+                    'cardOffsetX','cardOffsetY','scale','timeZone'
+                ];
+                const patch = {};
+                for (const k of allowed) { if (k in raw) patch[k] = raw[k]; }
+                setTemplate(t => ({ ...t, ...patch }));
+                alert('✅ 模板已导入！');
+            } catch (err) {
+                alert('❌ JSON 解析失败：' + err.message);
+            }
+        };
+        reader.readAsText(file);
+        e.target.value = '';
+    };
 
     const selected = cards.find(c => c.id === selectedId) || cards[0];
 
@@ -540,7 +592,26 @@ const TweetGenerator = () => {
             {/* ================= 右侧设置栏 ================= */}
             <div className="w-full md:w-80 bg-white border-l border-gray-200 h-screen overflow-y-auto flex flex-col z-10">
                 <div className="p-5 border-b border-gray-100">
-                    <h2 className="font-black text-xl text-gray-800">Settings</h2>
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-black text-xl text-gray-800">Settings</h2>
+                        <div className="flex gap-1.5">
+                            <button
+                                onClick={exportTemplate}
+                                title="导出模板 JSON（导入 perfect-tweet skill）"
+                                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+                            >
+                                <Download size={14} />
+                            </button>
+                            <button
+                                onClick={() => templateFileRef.current?.click()}
+                                title="导入模板 JSON"
+                                className="p-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+                            >
+                                <Upload size={14} />
+                            </button>
+                            <input ref={templateFileRef} type="file" accept=".json,application/json" className="hidden" onChange={importTemplate} />
+                        </div>
+                    </div>
                     <div className={`mt-1 text-[11px] font-medium ${selected.followTemplate ? 'text-sky-600' : 'text-orange-500'}`}>
                         {styleLabel}
                     </div>
