@@ -176,7 +176,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                             style={{ width: 18 * k, height: 18 * k, marginLeft: 4 * k }}
                         />
                     </div>
-                    <div style={{ color: secondary, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="truncate">
+                    <div data-truncate-name style={{ color: secondary, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="truncate">
                         {tweet.handle}
                     </div>
                 </div>
@@ -468,21 +468,42 @@ const TweetGenerator = () => {
             backgroundColor: null,
             onclone: (clonedDoc) => {
                 // html2canvas 1.4.1 不支持 CSS text-overflow: ellipsis，需手动处理
-                clonedDoc.querySelectorAll('[data-truncate-name]').forEach(el => {
+                // 策略：不用父容器宽度（html2canvas 对 flex 宽度计算不准），
+                // 而是直接测量 handle 的左侧位置，把名字截断到 handle 之前
+
+                const nameEl = clonedDoc.querySelector('[data-truncate-name]');
+                if (nameEl) {
+                    // 找到同级的 handle 元素（名称行的下一行）
+                    const handleEl = nameEl.parentElement?.nextElementSibling;
+                    if (handleEl) {
+                        const handleLeft = handleEl.getBoundingClientRect().left;
+                        const nameLeft = nameEl.getBoundingClientRect().left;
+                        const availableWidth = handleLeft - nameLeft - 4; // 留 4px 间距
+
+                        // 用 Canvas measureText 逐字截断
+                        nameEl.classList.remove('truncate');
+                        nameEl.style.overflow = 'hidden';
+                        nameEl.style.whiteSpace = 'nowrap';
+                        let text = nameEl.textContent;
+                        const canvas = clonedDoc.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        ctx.font = window.getComputedStyle(nameEl).font;
+                        while (text.length > 0 && ctx.measureText(text).width > availableWidth) {
+                            text = text.slice(0, -1);
+                        }
+                        nameEl.textContent = text;
+                    }
+                }
+
+                // 同步处理 handle 行（同样可能被 button 居中影响）
+                const handleLine = clonedDoc.querySelector('[data-truncate-name] + div, [data-truncate-name] + span');
+                // 处理所有 truncate 元素
+                clonedDoc.querySelectorAll('.truncate').forEach(el => {
                     el.classList.remove('truncate');
                     el.style.overflow = 'hidden';
                     el.style.whiteSpace = 'nowrap';
-                    // 手动截断：让文字在容器边界干净地裁切
-                    const parentWidth = el.parentElement.offsetWidth;
-                    let text = el.textContent;
-                    const canvas = clonedDoc.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    ctx.font = window.getComputedStyle(el).font;
-                    while (text.length > 0 && ctx.measureText(text).width > parentWidth) {
-                        text = text.slice(0, -1);
-                    }
-                    el.textContent = text;
                 });
+
                 // html2canvas 渲染 flex 内 img 有基线偏移，蓝标需下移补偿
                 clonedDoc.querySelectorAll('img[data-verified]').forEach(b => {
                     b.style.marginTop = '14px';
