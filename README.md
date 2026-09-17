@@ -36,6 +36,8 @@
 
 **[https://perfect-tweet-a6pm.vercel.app/](https://perfect-tweet-a6pm.vercel.app/)**
 
+**Agent 批量版**：想在任意 Agent（Claude Code / Cursor 等）里批量出图？见 [tweet-card-skill](https://github.com/RevaHuai/tweet-card-skill)。
+
 ---
 
 ## 快速开始
