@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import html2canvas from 'html2canvas';
+import { domToPng } from 'modern-screenshot';
 import {
     Download, Upload, Link as LinkIcon, Loader2, MoreHorizontal, Calendar, Languages,
     MessageCircle, Repeat2, Heart, Bookmark, Share, Trash2, Layers,
@@ -165,18 +165,17 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 />
                 <div className="min-w-0 flex-1" style={{ marginLeft: 12 * k }}>
                     <div className="flex items-center">
-                        <span data-truncate-name className="font-bold truncate min-w-0" style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }}>
+                        <span className="font-bold truncate min-w-0" style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }}>
                             {tweet.name}
                         </span>
                         <img
-                            data-verified
                             src={verifiedIcon}
                             alt="verified"
                             className="shrink-0 object-contain block"
                             style={{ width: 18 * k, height: 18 * k, marginLeft: 4 * k }}
                         />
                     </div>
-                    <div data-truncate-name style={{ color: secondary, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="truncate">
+                    <div style={{ color: secondary, fontSize: 15 * k, lineHeight: `${20 * k}px` }} className="truncate">
                         {tweet.handle}
                     </div>
                 </div>
@@ -208,7 +207,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 </div>
             )}
 
-            {/* ===== 互动行（分割线下方；flex-1 等宽 + justify-center 保证 html2canvas 导出一致对齐） ===== */}
+            {/* ===== 互动行（分割线下方；flex-1 等宽 + justify-center，浏览器与导出渲染一致） ===== */}
             {style.showStats && (
                 <div
                     className="flex select-none"
@@ -244,7 +243,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 /* ===== 背景图模式：卡片 = 紧凑自适应浮层 =====
                  * 宽度 = 画布宽 × Card size%（画布宽度随 dimension 变，卡片随之变宽变窄）；
                  * 高度完全由内容撑开 —— 只保留展示信息所必需的大小，四周全部露出背景图；
-                 * marginLeft/Top 实现拖拽偏移（html2canvas 对盒定位导出一致） */
+                 * marginLeft/Top 实现拖拽偏移（导出渲染一致） */
                 <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     <div
                         onPointerDown={onPointerDown}
@@ -458,61 +457,21 @@ const TweetGenerator = () => {
         if (failed.length) alert(`以下链接抓取失败：\n${failed.join('\n')}`);
     };
 
-    /* ===== 导出 ===== */
+    /* ===== 导出 =====
+     * modern-screenshot：把 DOM 序列化为 SVG foreignObject 交给浏览器原生渲染，
+     * flex 布局 / text-overflow: ellipsis / aspect-ratio / 圆角全部原生支持，
+     * 导出结果与浏览器所见像素级一致 —— 不再需要任何导出端 hack。
+     */
     const exportCard = async (card, index) => {
         const node = cardRefs.current[card.id];
         if (!node) return;
-        const canvas = await html2canvas(node, {
+        const dataUrl = await domToPng(node, {
             scale: 3,
-            useCORS: true,
-            backgroundColor: null,
-            onclone: (clonedDoc) => {
-                // html2canvas 1.4.1 不支持 CSS text-overflow: ellipsis，需手动处理
-                // 策略：不用父容器宽度（html2canvas 对 flex 宽度计算不准），
-                // 而是直接测量 handle 的左侧位置，把名字截断到 handle 之前
-
-                const nameEl = clonedDoc.querySelector('[data-truncate-name]');
-                if (nameEl) {
-                    // 找到同级的 handle 元素（名称行的下一行）
-                    const handleEl = nameEl.parentElement?.nextElementSibling;
-                    if (handleEl) {
-                        const handleLeft = handleEl.getBoundingClientRect().left;
-                        const nameLeft = nameEl.getBoundingClientRect().left;
-                        const availableWidth = handleLeft - nameLeft - 4; // 留 4px 间距
-
-                        // 用 Canvas measureText 逐字截断
-                        nameEl.classList.remove('truncate');
-                        nameEl.style.overflow = 'hidden';
-                        nameEl.style.whiteSpace = 'nowrap';
-                        let text = nameEl.textContent;
-                        const canvas = clonedDoc.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-                        ctx.font = window.getComputedStyle(nameEl).font;
-                        while (text.length > 0 && ctx.measureText(text).width > availableWidth) {
-                            text = text.slice(0, -1);
-                        }
-                        nameEl.textContent = text;
-                    }
-                }
-
-                // 同步处理 handle 行（同样可能被 button 居中影响）
-                const handleLine = clonedDoc.querySelector('[data-truncate-name] + div, [data-truncate-name] + span');
-                // 处理所有 truncate 元素
-                clonedDoc.querySelectorAll('.truncate').forEach(el => {
-                    el.classList.remove('truncate');
-                    el.style.overflow = 'hidden';
-                    el.style.whiteSpace = 'nowrap';
-                });
-
-                // html2canvas 渲染 flex 内 img 有基线偏移，蓝标需下移补偿
-                clonedDoc.querySelectorAll('img[data-verified]').forEach(b => {
-                    b.style.marginTop = '14px';
-                });
-            },
+            backgroundColor: null, // 透明背景导出（卡片自身色仍由内层渲染）
         });
         const link = document.createElement('a');
         link.download = `tweet-${card.tweet.handle.replace('@', '')}-${index + 1}.png`;
-        link.href = canvas.toDataURL('image/png');
+        link.href = dataUrl;
         link.click();
     };
 
