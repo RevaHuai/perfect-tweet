@@ -29,3 +29,6 @@ npm-debug.log*
 skill-repo/
 tweet-card-skill-release/
 web-app/
+
+# perfect-tweet skill 运行时生成的本地配置（不入库）
+skill/config.json

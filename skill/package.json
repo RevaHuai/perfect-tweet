@@ -1,0 +1,16 @@
+{
+    "name": "perfect-tweet-skill",
+    "version": "1.0.0",
+    "description": "X/Twitter tweet card generator — set a template once, batch-generate HD PNG cards from tweet links",
+    "type": "module",
+    "bin": {
+        "perfect-tweet": "bin/perfect-tweet.js"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "puppeteer": "^23.11.1"
+    },
+    "license": "MIT"
+}
