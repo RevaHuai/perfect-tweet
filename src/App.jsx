@@ -165,7 +165,7 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 />
                 <div className="min-w-0 flex-1" style={{ marginLeft: 12 * k }}>
                     <div className="flex items-center">
-                        <span className="font-bold truncate min-w-0" style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }}>
+                        <span data-truncate-name className="font-bold truncate min-w-0" style={{ color: textColor, fontSize: 15 * k, lineHeight: `${20 * k}px` }}>
                             {tweet.name}
                         </span>
                         <img
@@ -208,31 +208,24 @@ const TweetCard = ({ tweet, style, patchStyle, onDragSelect }) => {
                 </div>
             )}
 
-            {/* ===== 互动行（分割线下方；justify-between 自适应分布，图标↔数字用 margin 保证导出一致） ===== */}
+            {/* ===== 互动行（分割线下方；flex-1 等宽 + justify-center 保证 html2canvas 导出一致对齐） ===== */}
             {style.showStats && (
                 <div
-                    className="flex items-center justify-between select-none"
+                    className="flex select-none"
                     style={{ borderTop: `1px solid ${border}`, color: secondary, marginTop: 12 * k, paddingTop: 8 * k }}
                 >
-                    <span className="flex items-center">
-                        <MessageCircle size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.replies)}</span>
-                    </span>
-                    <span className="flex items-center">
-                        <Repeat2 size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.retweets)}</span>
-                    </span>
-                    <span className="flex items-center">
-                        <Heart size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.likes)}</span>
-                    </span>
-                    <span className="flex items-center">
-                        <Bookmark size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                        <span style={{ fontSize: 15 * k, marginLeft: 4 * k }}>{formatCount(tweet.stats.bookmarks)}</span>
-                    </span>
-                    <span className="flex items-center">
-                        <Share size={19 * k} strokeWidth={1.8} className="shrink-0" />
-                    </span>
+                    {[
+                        { Icon: MessageCircle, count: formatCount(tweet.stats.replies) },
+                        { Icon: Repeat2, count: formatCount(tweet.stats.retweets) },
+                        { Icon: Heart, count: formatCount(tweet.stats.likes) },
+                        { Icon: Bookmark, count: formatCount(tweet.stats.bookmarks) },
+                        { Icon: Share, count: null },
+                    ].map(({ Icon, count }, i) => (
+                        <span key={i} className="flex-1 flex items-center justify-center" style={{ fontSize: 15 * k }}>
+                            <Icon size={19 * k} strokeWidth={1.8} className="shrink-0" style={{ verticalAlign: 'middle' }} />
+                            {count !== null && <span style={{ marginLeft: 4 * k, lineHeight: '1' }}>{count}</span>}
+                        </span>
+                    ))}
                 </div>
             )}
         </>
@@ -474,6 +467,22 @@ const TweetGenerator = () => {
             useCORS: true,
             backgroundColor: null,
             onclone: (clonedDoc) => {
+                // html2canvas 1.4.1 不支持 CSS text-overflow: ellipsis，需手动处理
+                clonedDoc.querySelectorAll('[data-truncate-name]').forEach(el => {
+                    el.classList.remove('truncate');
+                    el.style.overflow = 'hidden';
+                    el.style.whiteSpace = 'nowrap';
+                    // 手动截断：让文字在容器边界干净地裁切
+                    const parentWidth = el.parentElement.offsetWidth;
+                    let text = el.textContent;
+                    const canvas = clonedDoc.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    ctx.font = window.getComputedStyle(el).font;
+                    while (text.length > 0 && ctx.measureText(text).width > parentWidth) {
+                        text = text.slice(0, -1);
+                    }
+                    el.textContent = text;
+                });
                 // html2canvas 渲染 flex 内 img 有基线偏移，蓝标需下移补偿
                 clonedDoc.querySelectorAll('img[data-verified]').forEach(b => {
                     b.style.marginTop = '14px';

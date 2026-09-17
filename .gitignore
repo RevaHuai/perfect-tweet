@@ -24,3 +24,8 @@ npm-debug.log*
 
 # NewMax 会话目录（本地会话产物，不入库）
 推特卡片项目/
+
+# 嵌套 git 仓库（技能开发产物，不入库）
+skill-repo/
+tweet-card-skill-release/
+web-app/
